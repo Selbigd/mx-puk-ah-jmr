@@ -1,0 +1,144 @@
+from pathlib import Path
+
+html = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Surprise 🎁</title>
+<style>
+  :root { --navy:#071326; --panel:#10223d; --gold:#ffd76a; --white:#f8fbff; }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; color:var(--white);
+    font-family:Arial, Helvetica, sans-serif;
+    background:radial-gradient(circle at 50% 0%, #17365b 0, #09172b 45%, #030812 100%);
+    display:flex; align-items:center; justify-content:center; padding:22px; overflow-x:hidden;
+  }
+  .stars { position:fixed; inset:0; pointer-events:none; opacity:.5;
+    background-image:radial-gradient(#fff 1px, transparent 1px);
+    background-size:48px 48px; mask-image:linear-gradient(to bottom,black,transparent); }
+  .card {
+    position:relative; width:min(760px,100%); text-align:center; padding:34px 24px 30px;
+    border:1px solid rgba(255,215,106,.32); border-radius:28px;
+    background:linear-gradient(145deg,rgba(17,37,66,.96),rgba(5,13,27,.97));
+    box-shadow:0 25px 90px #0009, inset 0 1px 0 #ffffff12;
+  }
+  .eyebrow { color:var(--gold); letter-spacing:4px; font-size:.78rem; font-weight:800; text-transform:uppercase; }
+  h1 { margin:12px 0 8px; font-size:clamp(2rem,6vw,3.3rem); }
+  .subtitle { color:#c5d2e5; margin:0 auto 28px; line-height:1.6; max-width:520px; }
+  .gift-wrap { margin:24px auto 12px; width:170px; height:170px; display:grid; place-items:center; }
+  .gift {
+    border:0; background:none; cursor:pointer; font-size:105px; line-height:1;
+    filter:drop-shadow(0 12px 16px #0008); animation:bob 1.8s ease-in-out infinite;
+    transition:transform .25s;
+  }
+  .gift:hover { transform:scale(1.08) rotate(-4deg); }
+  .gift:focus-visible, button:focus-visible { outline:3px solid var(--gold); outline-offset:5px; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .open-btn {
+    border:0; border-radius:999px; padding:14px 26px; cursor:pointer; font-size:1rem;
+    font-weight:800; color:#17213a; background:linear-gradient(135deg,#ffeaa1,#ffbf37);
+    box-shadow:0 8px 28px #ffca4a35; transition:transform .2s;
+  }
+  .open-btn:hover { transform:translateY(-2px); }
+  .result { display:none; animation:reveal .8s ease both; }
+  .result.show { display:block; }
+  @keyframes reveal { from{opacity:0;transform:translateY(18px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+  .teams { display:grid; grid-template-columns:1fr auto 1fr; gap:18px; align-items:center; margin:28px 0 20px; }
+  .team { display:flex; flex-direction:column; align-items:center; gap:12px; min-width:0; }
+  .crest { width:clamp(86px,18vw,130px); height:clamp(86px,18vw,130px); object-fit:contain;
+    filter:drop-shadow(0 8px 12px #0008); }
+  .team-name { font-weight:800; font-size:clamp(.85rem,2.7vw,1.15rem); }
+  .score { display:flex; align-items:center; gap:12px; font-size:clamp(2.5rem,8vw,4.5rem); font-weight:900; color:var(--gold); }
+  .dash { color:#8ea1bc; font-size:2rem; }
+  .winner { display:inline-block; margin:6px 0 18px; color:#152039; background:var(--gold); padding:9px 16px;
+    border-radius:999px; font-size:.82rem; font-weight:900; letter-spacing:1px; }
+  .message { color:#d5e0ef; line-height:1.65; margin:0 auto 22px; max-width:530px; }
+  .small { color:#8295b0; font-size:.76rem; line-height:1.5; margin-top:24px; }
+  .again { margin-top:6px; border:1px solid #ffffff35; background:#ffffff0b; color:white; padding:11px 18px; border-radius:999px; cursor:pointer; }
+  .confetti { position:fixed; top:-12px; width:8px; height:13px; pointer-events:none; animation:fall 3s linear forwards; z-index:5; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(780deg); opacity:.8; } }
+  .hidden { display:none; }
+  @media(max-width:430px) {
+    .card { padding:28px 15px 24px; }
+    .teams { gap:8px; }
+    .score { gap:7px; }
+    .team-name { max-width:110px; }
+  }
+  @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+</style>
+</head>
+<body>
+<div class="stars" aria-hidden="true"></div>
+<main class="card">
+  <div class="eyebrow">A special football gift</div>
+  <h1>Guess What's Inside? ⚽</h1>
+  <p class="subtitle" id="intro">Someone prepared a little football surprise for you. Tap the gift to reveal the score!</p>
+
+  <section id="giftSection">
+    <div class="gift-wrap">
+      <button class="gift" id="giftBtn" aria-label="Open the football gift">🎁</button>
+    </div>
+    <button class="open-btn" id="openBtn">OPEN YOUR GIFT ✨</button>
+  </section>
+
+  <section class="result" id="result" aria-live="polite">
+    <div class="eyebrow">The surprise score</div>
+    <div class="teams">
+      <div class="team">
+        <img class="crest" src="https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg" alt="Real Madrid official club crest">
+        <div class="team-name">REAL MADRID</div>
+      </div>
+      <div class="score"><span>2</span><span class="dash">:</span><span>1</span></div>
+      <div class="team">
+        <img class="crest" src="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" alt="FC Barcelona official club crest">
+        <div class="team-name">FC BARCELONA</div>
+      </div>
+    </div>
+    <div class="winner">🏆 HALA MADRID! 🏆</div>
+    <p class="message">The perfect football surprise: Real Madrid 2 – 1 Barcelona!<br><strong>White hearts, big dreams, and a little El Clásico magic.</strong></p>
+    <button class="again" id="againBtn">🎁 Open it again</button>
+    <p class="small">This is a custom gift reveal, not a verified live or historical match result.</p>
+  </section>
+  <p class="small" id="footer">Made for a football fan ❤️</p>
+</main>
+<script>
+  const giftSection = document.getElementById('giftSection');
+  const result = document.getElementById('result');
+  const intro = document.getElementById('intro');
+  const footer = document.getElementById('footer');
+
+  function celebrate() {
+    giftSection.classList.add('hidden');
+    intro.classList.add('hidden');
+    result.classList.add('show');
+    footer.classList.add('hidden');
+    for (let i = 0; i < 65; i++) {
+      const piece = document.createElement('span');
+      piece.className = 'confetti';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.animationDelay = Math.random() * 1.1 + 's';
+      piece.style.background = ['#ffd76a','#ffffff','#e53935','#3d72d9'][Math.floor(Math.random()*4)];
+      piece.style.transform = 'rotate(' + Math.random()*360 + 'deg)';
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 4300);
+    }
+  }
+  function resetGift() {
+    result.classList.remove('show');
+    giftSection.classList.remove('hidden');
+    intro.classList.remove('hidden');
+    footer.classList.remove('hidden');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.getElementById('giftBtn').addEventListener('click', celebrate);
+  document.getElementById('openBtn').addEventListener('click', celebrate);
+  document.getElementById('againBtn').addEventListener('click', resetGift);
+</script>
+</body>
+</html>'''
+
+path = Path("/mnt/data/index.html")
+path.write_text(html, encoding="utf-8")
+print(f"Created {path} ({path.stat().st_size} bytes)")
